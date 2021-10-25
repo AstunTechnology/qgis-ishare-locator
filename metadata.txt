@@ -1,0 +1,32 @@
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=iShare Locator Filter
+description=This is a plugin which adds a iShare Locator Filter (Geocoder) to QGIS
+about=Nominatim is a free Geocoder service provided by the OpenStreetMap project.
+    A Locator Filter implements the fetching of data from internal or external sources.
+    This plugin is based almost entirely upon the work done by Richard Duivenvoorde here: https://github.com/rduivenvoorde/nominatim_locator_filter 
+    Read more: <a href="http://www.qgis.nl/2018/05/16/english-coding-a-qgslocator-plugin/?lang=en">http://www.qgis.nl/2018/05/16/english-coding-a-qgslocator-plugin</a>
+
+version=0.1.0
+qgisMinimumVersion=3.4
+author=Matt Travis, Devon, UK
+email=matt.travis1@gmail.com
+
+# Tags are comma separated with spaces allowed
+tags=geocoder, locator, filter, gazeteer 
+
+tracker=https://github.com/rduivenvoorde/nominatim_locator_filter/issues
+homepage=https://github.com/rduivenvoorde/nominatim_locator_filter
+repository=https://github.com/rduivenvoorde/nominatim_locator_filter
+
+changelog=
+    0.1.0       initial public release
+
+category=Filter
+
+# experimental flag
+experimental=true
+
+# change icon
+icon=icons/icon.svg
