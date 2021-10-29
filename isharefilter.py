@@ -130,20 +130,20 @@ class iShareLocatorFilter(QgsLocatorFilter):
             # THIS: results in a floating window with a warning in it, wrong thread/parent?
             #self.iface.messageBar().pushWarning("iShareLocatorFilter Error", '{}'.format(err))
             # THIS: emitting the signal here does not work either?
-            self.resultProblem.emit('{}'.format(err))
+            self.resultProblem.emit('{}'.format(err)) # Does this fail because `err` is not a string, and your signal is defined as passing a string? Perhaps you need one of `err`'s properties?
 
     def remove_marker(self):
         vertex_items = [ i for i in self.iface.mapCanvas().scene().items() if issubclass(type(i), QgsVertexMarker)]
         for ver in vertex_items:
-            if ver in self.iface.mapCanvas().scene().items():
+            if ver in self.iface.mapCanvas().scene().items(): # duplicate condition from two lines earlier?
                 self.iface.mapCanvas().scene().removeItem(ver)
 
-    def triggerResult(self, result):
+    def triggerResult(self, result): # Is this ever called?
         self.info("UserClick: {}".format(result.displayString))
         doc = result.userData
         x = doc['X']
         y = doc['Y']
-        rect = QgsRectangle(float(x), float(y), float(x), float(y))
+        rect = QgsRectangle(float(x), float(y), float(x), float(y)) # Why a zero-area rect?
         dest_crs = QgsProject.instance().crs()
         results_crs = QgsCoordinateReferenceSystem(
             27700, QgsCoordinateReferenceSystem.PostgisCrsId)
