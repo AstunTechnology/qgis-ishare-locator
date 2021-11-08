@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-from qgis.core import Qgis, QgsMessageLog, QgsLocatorFilter, QgsLocatorResult, QgsRectangle, \
-    QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject, QgsPointXY
-from qgis.gui import QgsVertexMarker
-from . networkaccessmanager import NetworkAccessManager, RequestsException
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.PyQt.QtGui import QColor
 import json
 import time
+
+from qgis.core import (Qgis, QgsCoordinateReferenceSystem,
+                       QgsCoordinateTransform, QgsLocatorFilter,
+                       QgsLocatorResult, QgsMessageLog, QgsPointXY, QgsProject,
+                       QgsRectangle)
+from qgis.gui import QgsVertexMarker
+from qgis.PyQt.QtCore import QTimer, pyqtSignal
+from qgis.PyQt.QtGui import QColor
 from requests.models import PreparedRequest
+
+from .networkaccessmanager import NetworkAccessManager, RequestsException
 
 
 class iShareFilterPlugin:
@@ -61,7 +65,7 @@ class iShareLocatorFilter(QgsLocatorFilter):
     # some magic numbers to be able to zoom to more or less defined levels
     ADDRESS = 1000
     STREET = 1500
-    ZIP = 3000
+    POSTCODE = 3000
     PLACE = 30000
     CITY = 120000
     ISLAND = 250000
@@ -70,7 +74,6 @@ class iShareLocatorFilter(QgsLocatorFilter):
     resultProblem = pyqtSignal(str)
 
     def __init__(self, iface):
-        # you REALLY REALLY have to save the handle to iface, else segfaults!!
         self.iface = iface
         super(QgsLocatorFilter, self).__init__()
 
@@ -91,52 +94,33 @@ class iShareLocatorFilter(QgsLocatorFilter):
         if len(search) < 2:
             return
 
-        # see https://operations.osmfoundation.org/policies/nominatim/
-        # "Auto-complete search This is not yet supported by iShare and you must not implement such a service on the client side using the API."
-        # so end with a space to trigger a search:
-        # if search[-1] != ' ':
-        #    return
-
         url = '{}{}'.format(self.SEARCH_URL, search)
         self.info('Search url {}'.format(url))
         nam = NetworkAccessManager()
         try:
-            # see https://operations.osmfoundation.org/policies/nominatim/
-            # "Provide a valid HTTP Referer or User-Agent identifying the application (QGIS geocoder)"
             headers = {b'User-Agent': self.USER_AGENT}
-            # use BLOCKING request, as fetchResults already has it's own thread!
             (response, content) = nam.request(
                 url, headers=headers, blocking=True)
-            # self.info(response)
-            # self.info(response.status_code)
-            if response.status_code == 200:  # other codes are handled by NetworkAccessManager
+            if response.status_code == 200: 
                 text = content.decode('utf-8')
                 data = json.loads(text)
                 columns = data['columns']
                 for item in data['data']:
                     mapped = dict(zip(columns, item))
-                    #result = namedtuple('Result', ['description', 'x', 'y'])
                     result = QgsLocatorResult()
                     result.filter = self
                     result.displayString = mapped['Name']
-                    # use the json full item as userData, so all info is in it:
                     result.userData = mapped
                     self.resultFetched.emit(result)
 
         except RequestsException as err:
-            # Handle exception..
-            # only this one seems to work
             self.info(err)
-            # THIS: results in a floating window with a warning in it, wrong thread/parent?
-            #self.iface.messageBar().pushWarning("iShareLocatorFilter Error", '{}'.format(err))
-            # THIS: emitting the signal here does not work either?
             self.resultProblem.emit('{}'.format(err))
 
     def remove_marker(self):
         vertex_items = [ i for i in self.iface.mapCanvas().scene().items() if issubclass(type(i), QgsVertexMarker)]
         for ver in vertex_items:
-            if ver in self.iface.mapCanvas().scene().items():
-                self.iface.mapCanvas().scene().removeItem(ver)
+            self.iface.mapCanvas().scene().removeItem(ver)
 
     def triggerResult(self, result):
         self.info("UserClick: {}".format(result.displayString))
@@ -145,17 +129,16 @@ class iShareLocatorFilter(QgsLocatorFilter):
         y = doc['Y']
         rect = QgsRectangle(float(x), float(y), float(x), float(y))
         dest_crs = QgsProject.instance().crs()
-        results_crs = QgsCoordinateReferenceSystem(
-            27700, QgsCoordinateReferenceSystem.PostgisCrsId)
-        transform = QgsCoordinateTransform(
-            results_crs, dest_crs, QgsProject.instance())
+        results_crs = QgsCoordinateReferenceSystem(27700, QgsCoordinateReferenceSystem.PostgisCrsId)
+        transform = QgsCoordinateTransform(results_crs, dest_crs, QgsProject.instance())
         r = transform.transformBoundingBox(rect)
         self.iface.mapCanvas().setExtent(r, False)
-        self.iface.mapCanvas().zoomScale(1000)
+        self.iface.mapCanvas().zoomScale(1000) #change zoom scale here
         self.iface.mapCanvas().refresh()
-
+    
+        #uncomment this section if you want a marker to appear for the search result
+        '''
         canvas = self.iface.mapCanvas()
-        self.remove_marker()
         easting = int(float(x))
         northing =int(float(y))
         pnt = QgsPointXY(easting,northing)
@@ -168,6 +151,10 @@ class iShareLocatorFilter(QgsLocatorFilter):
         self.m.setFillColor(QColor(200,0,0))
         self.m.hide()
         self.m.show()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.remove_marker)
+        self.timer.start(5000)
+        '''
 
     def info(self, msg=""):
         QgsMessageLog.logMessage('{} {}'.format(
