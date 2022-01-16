@@ -45,7 +45,7 @@ class iShareLocatorFilter(QgsLocatorFilter):
 
     USER_AGENT = b'Mozilla/5.0 QGIS iShareLocatorFilter'
 
-    url = "https://mapping.milton-keynes.gov.uk/getdata.aspx"
+    url = "https://demo.astuntechnology.com/maps/getdata.aspx"
     params = {
         'type': 'json',
         'RequestType': 'LocationSearch',
@@ -59,18 +59,6 @@ class iShareLocatorFilter(QgsLocatorFilter):
     req = PreparedRequest()
     new_url = req.prepare_url(url, params)
     SEARCH_URL = req.url+'&location='
-     
-    #SEARCH_URL = 'https://mapping.milton-keynes.gov.uk/getdata.aspx?type=json&service=LocationSearch&RequestType=LocationSearch&pagesize=25&startnum=1&gettotals=false&axuid=1629885379107&mapsource=mapsources/MyHouse&_=1629885379107&location='
-
-    # some magic numbers to be able to zoom to more or less defined levels
-    ADDRESS = 1000
-    STREET = 1500
-    POSTCODE = 3000
-    PLACE = 30000
-    CITY = 120000
-    ISLAND = 250000
-    COUNTRY = 4000000
-
     resultProblem = pyqtSignal(str)
 
     def __init__(self, iface):
